@@ -1,4 +1,4 @@
-name: NPM Publish 
+name: NPM Publish
 
 on:
   pull_request:
@@ -12,12 +12,21 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
-          node-version: 10
-      - run: npm install
-      - run: npm test
-      - uses: JS-DevTools/npm-publish@v1
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      # 原配置用 Node 10 + npm install：Node 10 已远超 tsdx 0.14 及其新版
+      # @babel/* 依赖的支持范围，prepare 阶段的 babel 插件直接解析不了 TS 语法。
+      # 这里升到 Node 20，并改用仓库已提交的 yarn.lock 安装以保证可复现。
+      - run: yarn install --frozen-lockfile
+
+      - run: yarn build
+
+      - uses: JS-DevTools/npm-publish@v3
         with:
           token: ${{ secrets.npm_token }}
+          access: public
